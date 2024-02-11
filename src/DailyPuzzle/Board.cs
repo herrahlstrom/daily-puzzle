@@ -1,73 +1,23 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 
-public record struct BlockTrace(Pos Position, Block Block);
-
 public class Board
 {
-    const int Width = 7;
     const int Height = 7;
+    const int Width = 7;
     private bool[,] _board;
     private Pos _nextPos;
     private List<BlockTrace> _placedBlocks = [];
 
-    public IReadOnlyList<BlockTrace> PlacedBlocks => _placedBlocks;
-
-    private Board()
-    {
-        _board = new bool[Width, Height];
-    }
-
-    private Pos GetNextPos()
-    {
-        for (int y = 0; y < _board.GetLength(1); y++)
-        {
-            for (int x = 0; x < _board.GetLength(0); x++)
-            {
-                if (_board[x, y])
-                {
-                    return new Pos(x, y);
-                }
-            }
-        }
-        return new(-1, -1);
-    }
-
-    public bool CanBePlaced(Block block, [MaybeNullWhen(false)] out Board nextBoard)
-    {
-        nextBoard = null;
-        List<Pos> positionsToBeBlocked = [];
-
-        for (int i = 0; i < block.Positions.Count; i++)
-        {
-            positionsToBeBlocked.Clear();
-
-            var pivot = block.Positions[i];
-            for (int j = 0; j < block.Positions.Count; j++)
-            {
-                var x = _nextPos.X + block.Positions[j].X - pivot.X;
-                var y = _nextPos.Y + block.Positions[j].Y - pivot.Y;
-                positionsToBeBlocked.Add(new(x, y));
-            }
-
-            if (positionsToBeBlocked.All(pos => pos.X >= 0 && pos.X < Width && pos.Y >= 0 && pos.Y < Height && _board[pos.X, pos.Y]))
-            {
-                nextBoard = Clone();
-                foreach (var pos in positionsToBeBlocked)
-                {
-                    nextBoard._board[pos.X, pos.Y] = false;
-                }
-                nextBoard._placedBlocks.Add(new BlockTrace(_nextPos - pivot, block));
-                nextBoard._nextPos = nextBoard.GetNextPos();
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     public Board(int month, int day)
     {
-        _board = CreateEmptyBoard();
+        _board = new bool[7, 7];
+        for (int x = 0; x <= 5; x++) _board[x, 0] = true;
+        for (int x = 0; x <= 5; x++) _board[x, 1] = true;
+        for (int x = 0; x <= 6; x++) _board[x, 2] = true;
+        for (int x = 0; x <= 6; x++) _board[x, 3] = true;
+        for (int x = 0; x <= 6; x++) _board[x, 4] = true;
+        for (int x = 0; x <= 6; x++) _board[x, 5] = true;
+        for (int x = 0; x <= 2; x++) _board[x, 6] = true;
 
         switch (month)
         {
@@ -105,6 +55,52 @@ public class Board
         _nextPos = GetNextPos();
     }
 
+    private Board()
+    {
+        _board = new bool[Width, Height];
+    }
+
+    public IReadOnlyList<BlockTrace> PlacedBlocks => _placedBlocks;
+
+    public static IReadOnlyList<BlockTrace>? Solve(int month, int day)
+    {
+        var board = new Board(month, day);
+        return board.Solve(board, 0b11111111);
+    }
+
+    public bool CanBePlaced(Block block, [MaybeNullWhen(false)] out Board nextBoard)
+    {
+        nextBoard = null;
+        List<Pos> positionsToBeBlocked = [];
+
+        for (int i = 0; i < block.Positions.Count; i++)
+        {
+            positionsToBeBlocked.Clear();
+
+            var pivot = block.Positions[i];
+            for (int j = 0; j < block.Positions.Count; j++)
+            {
+                var x = _nextPos.X + block.Positions[j].X - pivot.X;
+                var y = _nextPos.Y + block.Positions[j].Y - pivot.Y;
+                positionsToBeBlocked.Add(new(x, y));
+            }
+
+            if (positionsToBeBlocked.All(pos => pos.X >= 0 && pos.X < Width && pos.Y >= 0 && pos.Y < Height && _board[pos.X, pos.Y]))
+            {
+                nextBoard = Clone();
+                foreach (var pos in positionsToBeBlocked)
+                {
+                    nextBoard._board[pos.X, pos.Y] = false;
+                }
+                nextBoard._placedBlocks.Add(new BlockTrace(_nextPos - pivot, block));
+                nextBoard._nextPos = nextBoard.GetNextPos();
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public Board Clone()
     {
         var clone = new Board();
@@ -116,16 +112,49 @@ public class Board
         return clone;
     }
 
-    private static bool[,] CreateEmptyBoard()
+    private Pos GetNextPos()
     {
-        var board = new bool[7, 7];
-        for (int x = 0; x <= 5; x++) board[x, 0] = true;
-        for (int x = 0; x <= 5; x++) board[x, 1] = true;
-        for (int x = 0; x <= 6; x++) board[x, 2] = true;
-        for (int x = 0; x <= 6; x++) board[x, 3] = true;
-        for (int x = 0; x <= 6; x++) board[x, 4] = true;
-        for (int x = 0; x <= 6; x++) board[x, 5] = true;
-        for (int x = 0; x <= 2; x++) board[x, 6] = true;
-        return board;
+        for (int y = 0; y < _board.GetLength(1); y++)
+        {
+            for (int x = 0; x < _board.GetLength(0); x++)
+            {
+                if (_board[x, y])
+                {
+                    return new Pos(x, y);
+                }
+            }
+        }
+        return new(-1, -1);
+    }
+    private IReadOnlyList<BlockTrace>? Solve(Board board, int piecesLeft)
+    {
+        for (int i = 0; i < Pieces.AllPieces.Length; i++)
+        {
+            int pieceBit = 1 << i;
+            if ((piecesLeft & pieceBit) == 0)
+                continue;
+
+            var nextPiecesLeft = piecesLeft ^ pieceBit;
+            foreach (var block in Pieces.AllPieces[i].Blocks)
+            {
+                if (board.CanBePlaced(block, out Board? nextBoard))
+                {
+                    if (nextPiecesLeft == 0)
+                    {
+                        return nextBoard.PlacedBlocks;
+                    }
+
+                    var solvedBlocks = Solve(nextBoard, nextPiecesLeft);
+                    if (solvedBlocks != null)
+                    {
+                        return solvedBlocks;
+                    }
+                }
+            }
+        }
+
+        return null;
     }
 }
+
+public record struct BlockTrace(Pos Position, Block Block);
