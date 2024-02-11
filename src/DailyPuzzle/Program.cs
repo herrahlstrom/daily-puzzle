@@ -11,13 +11,20 @@ ConsoleColor[] resultColors = [
     ConsoleColor.DarkYellow];
 const int PrintResultSize = 3;
 
-var timestamp = Stopwatch.GetTimestamp();
+int month = DateTime.Today.Month;
+int day = DateTime.Today.Day;
 
-var solvedBlocks = Board.Solve(DateTime.Today.Month, DateTime.Today.Day)
+if (args.Length >= 2)
+{
+    if (int.TryParse(args[0], out int arg0) && int.TryParse(args[1], out int arg1))
+    {
+        month = arg0;
+        day = arg1;
+    }
+}
+
+var solvedBlocks = Board.Solve(month, day)
     ?? throw new NotSupportedException("UNSOLVABLE :-(");
-
-var elapsed = Stopwatch.GetElapsedTime(timestamp);
-Console.WriteLine($"Time to solve: {elapsed.TotalMilliseconds:0}ms.");
 
 Dictionary<Pos, ConsoleColor> pieceIndicators = [];
 

@@ -4,13 +4,31 @@ public class Board
 {
     const int Height = 7;
     const int Width = 7;
-    private bool[,] _board;
+    private readonly bool[,] _board;
     private Pos _nextPos;
     private List<BlockTrace> _placedBlocks = [];
 
     public Board(int month, int day)
     {
-        _board = new bool[7, 7];
+        Pos monthPos = month switch
+        {
+            >= 1 and <= 6 => new(month - 1, 0),
+            >= 7 and <= 12 => new(month - 7, 1),
+            _ => throw new ArgumentOutOfRangeException(nameof(month))
+        };
+
+        Pos dayPos = day switch
+        {
+            >= 1 and <= 7 => new(day - 1, 2),
+            >= 8 and <= 14 => new(day - 8, 3),
+            >= 12 and <= 21 => new(day - 15, 4),
+            >= 22 and <= 28 => new(day - 22, 5),
+            >= 29 and <= 31 => new(day - 29, 6),
+            _ => throw new ArgumentOutOfRangeException(nameof(day))
+        };
+
+        _board = new bool[Width, Height];
+
         for (int x = 0; x <= 5; x++) _board[x, 0] = true;
         for (int x = 0; x <= 5; x++) _board[x, 1] = true;
         for (int x = 0; x <= 6; x++) _board[x, 2] = true;
@@ -19,38 +37,8 @@ public class Board
         for (int x = 0; x <= 6; x++) _board[x, 5] = true;
         for (int x = 0; x <= 2; x++) _board[x, 6] = true;
 
-        switch (month)
-        {
-            case >= 1 and <= 6:
-                _board[month - 1, 0] = false;
-                break;
-            case >= 7 and <= 12:
-                _board[month - 7, 1] = false;
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(month));
-        }
-
-        switch (day)
-        {
-            case >= 1 and <= 7:
-                _board[day - 1, 2] = false;
-                break;
-            case >= 8 and <= 14:
-                _board[day - 8, 3] = false;
-                break;
-            case >= 12 and <= 21:
-                _board[day - 15, 4] = false;
-                break;
-            case >= 22 and <= 28:
-                _board[day - 22, 5] = false;
-                break;
-            case >= 29 and <= 31:
-                _board[day - 29, 6] = false;
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(day));
-        }
+        _board[monthPos.X, monthPos.Y] = false;
+        _board[dayPos.X, dayPos.Y] = false;
 
         _nextPos = GetNextPos();
     }
@@ -114,9 +102,9 @@ public class Board
 
     private Pos GetNextPos()
     {
-        for (int y = 0; y < _board.GetLength(1); y++)
+        for (int y = 0; y < Height; y++)
         {
-            for (int x = 0; x < _board.GetLength(0); x++)
+            for (int x = 0; x < Width; x++)
             {
                 if (_board[x, y])
                 {
