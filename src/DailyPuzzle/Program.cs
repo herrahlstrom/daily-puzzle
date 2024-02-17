@@ -1,11 +1,11 @@
 ﻿using System.Diagnostics;
 
 ConsoleColor[] resultColors = [
-    ConsoleColor.Red,
     ConsoleColor.Blue,
     ConsoleColor.Green,
     ConsoleColor.DarkGray,
     ConsoleColor.Cyan,
+    ConsoleColor.White,
     ConsoleColor.DarkRed,
     ConsoleColor.Magenta,
     ConsoleColor.DarkYellow];
@@ -47,7 +47,7 @@ for (int y = 0; y < 7; y++)
             Console.ForegroundColor = pieceIndicators.TryGetValue(new Pos(x, y), out ConsoleColor color) ? color : Console.BackgroundColor;
             for (int size_x = 0; size_x < PrintResultSize; size_x++)
             {
-                Console.Write("%&");
+                Console.Write("⦾⦾");
             }
         }
         Console.WriteLine();
